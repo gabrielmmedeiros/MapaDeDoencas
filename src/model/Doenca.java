@@ -1,10 +1,13 @@
 package model;
+
+import Interface.IdentificavelPorNome;
+
 /**
  * Representa uma doença informada por um usuário.
  * O grau de risco é definido pelas subclasses.
  */
 
-public abstract class Doenca {
+public abstract class Doenca implements IdentificavelPorNome {
     private final String nome;
     private int id;// sera preenchido pelo banco via DAO
 

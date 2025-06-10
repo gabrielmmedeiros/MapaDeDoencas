@@ -1,10 +1,12 @@
 package model;
 
+import Interface.IdentificavelPorNome;
+
 /**
  * Representa uma localidade onde uma doença foi contraída.
  */
 
-public class Local {
+public class Local implements IdentificavelPorNome {
     private int id; // sera preenchido pelo banco via DAO
     private final String nome;
 
