@@ -1,135 +1,136 @@
 package dao;
-
-import model.Usuario;
+import model.Doenca;
+import model.Sintoma;
 import util.ConnectionFactory;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Interface DAO para operações CRUD de Usuario.
+ * Implementação JDBC de DoencaDAO.
+ * Carregamento de sintomas delegados ao SintomaDAO.
  */
-public interface UsuarioDAO {
-    void criar(Usuario usuario);
-    Usuario buscarPorId(int id);
-    Usuario buscarPorApelido(String apelido);
-    List<Usuario> listarTodos();
-    void atualizar(Usuario usuario);
-    boolean deletar(int id);
-}
+public class DoencaDAOImpl implements DoencaDAO {
+    private final SintomaDAO sintomaDAO = new SintomaDAOImpl();
 
-
-package dao;
-
-import model.Usuario;
-import util.ConnectionFactory;
-
-import java.sql.*;
-        import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Implementação JDBC de UsuarioDAO.
- */
-public class UsuarioDAOImpl implements UsuarioDAO {
     @Override
-    public void criar(Usuario usuario) {
-        String sql = "INSERT INTO usuarios (apelido) VALUES (?)";
+    public Doenca criar(Doenca doenca) {
+        String sql = "INSERT INTO doencas (nome, gravidade) VALUES (?, ?)";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setString(1, usuario.getApelido());
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows == 0) {
-                throw new RuntimeException("Falha ao inserir usuário, nenhuma linha afetada.");
+            stmt.setString(1, doenca.getNome());
+            stmt.setString(2, doenca.getGrauDeRisco());
+            if (stmt.executeUpdate() == 0) {
+                throw new RuntimeException("Falha ao inserir doença.");
             }
-            try (ResultSet keys = stmt.getGeneratedKeys()) {
-                if (keys.next()) {
-                    usuario.atribuirId(keys.getInt(1));
-                } else {
-                    throw new RuntimeException("Falha ao obter ID do usuário inserido.");
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return Doenca.reconstruir(rs.getInt(1), doenca.getNome(), doenca.getGrauDeRisco());
                 }
+                throw new RuntimeException("Falha ao obter ID gerado.");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao inserir usuário no banco de dados.", e);
+            throw new RuntimeException("Erro ao criar doença.", e);
         }
     }
 
     @Override
-    public Usuario buscarPorId(int id) {
-        String sql = "SELECT id, apelido FROM usuarios WHERE id = ?";
+    public Doenca buscarPorId(int id) {
+        String sql = "SELECT id, nome, gravidade FROM doencas WHERE id = ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido"));
+                    Doenca d = Doenca.reconstruir(
+                            rs.getInt("id"), rs.getString("nome"), rs.getString("gravidade")
+                    );
+                    List<Sintoma> sintomas = sintomaDAO.buscarPorDoencaId(d.getId());
+                    for (Sintoma s : sintomas) {
+                        d.adicionarSintoma(s);
+                    }
+                    return d;
                 }
                 return null;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao buscar usuário por ID.", e);
+            throw new RuntimeException("Erro ao buscar doença por ID.", e);
         }
     }
 
     @Override
-    public Usuario buscarPorApelido(String apelido) {
-        String sql = "SELECT id, apelido FROM usuarios WHERE apelido = ?";
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, apelido);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido"));
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Erro ao buscar usuário por apelido.", e);
-        }
-    }
-
-    @Override
-    public List<Usuario> listarTodos() {
-        String sql = "SELECT id, apelido FROM usuarios";
-        List<Usuario> lista = new ArrayList<>();
+    public List<Doenca> listarTodos() {
+        String sql = "SELECT id, nome, gravidade FROM doencas";
+        List<Doenca> lista = new ArrayList<>();
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
-                lista.add(Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido")));
+                Doenca d = Doenca.reconstruir(
+                        rs.getInt("id"), rs.getString("nome"), rs.getString("gravidade")
+                );
+                List<Sintoma> sintomas = sintomaDAO.buscarPorDoencaId(d.getId());
+                for (Sintoma s : sintomas) {
+                    d.adicionarSintoma(s);
+                }
+                lista.add(d);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao listar usuários.", e);
+            throw new RuntimeException("Erro ao listar doenças.", e);
         }
         return lista;
     }
 
     @Override
-    public void atualizar(Usuario usuario) {
-        String sql = "UPDATE usuarios SET apelido = ? WHERE id = ?";
+    public List<Doenca> buscarPorGravidade(String gravidade) {
+        String sql = "SELECT id, nome, gravidade FROM doencas WHERE gravidade = ?";
+        List<Doenca> lista = new ArrayList<>();
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, usuario.getApelido());
-            stmt.setInt(2, usuario.getId());
-            int rows = stmt.executeUpdate();
-            if (rows == 0) {
-                throw new RuntimeException("Nenhum usuário foi atualizado.");
+            stmt.setString(1, gravidade);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Doenca d = Doenca.reconstruir(
+                            rs.getInt("id"), rs.getString("nome"), rs.getString("gravidade")
+                    );
+                    List<Sintoma> sintomas = sintomaDAO.buscarPorDoencaId(d.getId());
+                    for (Sintoma s : sintomas) {
+                        d.adicionarSintoma(s);
+                    }
+                    lista.add(d);
+                }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao atualizar usuário.", e);
+            throw new RuntimeException("Erro ao buscar por gravidade.", e);
+        }
+        return lista;
+    }
+
+    @Override
+    public void atualizar(Doenca doenca) {
+        String sql = "UPDATE doencas SET nome = ?, gravidade = ? WHERE id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, doenca.getNome());
+            stmt.setString(2, doenca.getGrauDeRisco());
+            stmt.setInt(3, doenca.getId());
+            if (stmt.executeUpdate() == 0) {
+                throw new RuntimeException("Nenhuma doença atualizada.");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao atualizar doença.", e);
         }
     }
 
     @Override
     public boolean deletar(int id) {
-        String sql = "DELETE FROM usuarios WHERE id = ?";
+        String sql = "DELETE FROM doencas WHERE id = ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao deletar usuário.", e);
+            throw new RuntimeException("Erro ao deletar doença.", e);
         }
     }
 }

@@ -8,11 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementação JDBC de UsuarioDAO.
+ * Implementação JDBC de UsuarioDAO usando factory público para reconstruir instâncias com ID.
  */
 public class UsuarioDAOImpl implements UsuarioDAO {
+
     @Override
-    public void criar(Usuario usuario) {
+    public Usuario criar(Usuario usuario) {
         String sql = "INSERT INTO usuarios (apelido) VALUES (?)";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -23,7 +24,8 @@ public class UsuarioDAOImpl implements UsuarioDAO {
             }
             try (ResultSet keys = stmt.getGeneratedKeys()) {
                 if (keys.next()) {
-                    usuario.atribuirId(keys.getInt(1));
+                    int generatedId = keys.getInt(1);
+                    return Usuario.reconstruir(generatedId, usuario.getApelido());
                 } else {
                     throw new RuntimeException("Falha ao obter ID do usuário inserido.");
                 }
