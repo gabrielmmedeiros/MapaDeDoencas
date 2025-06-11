@@ -1,8 +1,6 @@
 package model;
 
 import java.util.*;
-import model.Usuario;
-import dao.UsuarioDAO;
 
 /**
  * Gerencia a criação de usuários com apelidos únicos, antes de persistir o dado.

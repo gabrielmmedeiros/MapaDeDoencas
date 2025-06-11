@@ -1,10 +1,12 @@
 package model;
 
 public class DoencaModerada extends Doenca {
-    public DoencaModerada(String nome) {
+    // Construtor package-private simples
+    DoencaModerada(String nome) {
         super(nome);
     }
 
+    @Override
     public String getGrauDeRisco() {
         return "Moderada";
     }

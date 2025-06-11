@@ -3,6 +3,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Date;
 /**
  * Esta classe é responsável por:
  * - Gerar seu apelido de forma aleatória.
@@ -55,7 +56,7 @@ public class Usuario {
      * Cria uma nova instância de Usuario com apelido gerado aleatoriamente pelo gerarApelidoAleatorio.
      *
      * Atenção: este metodo **não garante** que o apelido seja único.
-     * É responsabilidade GerenciadorDeNick validar isso.
+     * É responsabilidade GerenciadorDeApelido validar isso.
      */
     public static Usuario criar(){//chama o construtor e cria o usuário com nome random
         String apelido = gerarApelidoAleatorio();
@@ -65,9 +66,17 @@ public class Usuario {
     public String getApelido() {
         return apelido;
     }
+
     void atribuirId(int id) {
-        if (this.id > 0) throw new IllegalStateException("Este objeto já possui um ID atribuído anteriormente");
-        if (id <= 0) throw new IllegalArgumentException("ID inválido");
+        if (this.id > 0 && this.id!= id) { // Permite reatribuir o mesmo ID, mas não um diferente se já tiver um > 0
+            throw new IllegalStateException("Este objeto já possui um ID atribuído anteriormente e diferente do fornecido.");
+        }
+        if (this.id == 0 && id <= 0) { // Se ainda não tem ID, o novo ID deve ser positivo
+            throw new IllegalArgumentException("ID inválido para um novo objeto.");
+        }
+        if (id <= 0 && this.id > 0) { // Não pode setar para um ID inválido se já tinha um válido
+            throw new IllegalArgumentException("Não é possível atribuir um ID inválido a um objeto que já possui ID.");
+        }
         this.id = id;
     }
     //Para o DAO conseguir puxar o nome criado para o banco
@@ -83,10 +92,57 @@ public class Usuario {
      */
     public void adicionarRelato(Relato relato) {
         Objects.requireNonNull(relato, "Relato não pode ser nulo");
-        relatos.add(relato);
+        if (!this.relatos.contains(relato)) { // Verifica se o relato NÃO está na lista
+            this.relatos.add(relato);        // Adiciona SOMENTE SE não estiver na lista
+        }
     }
-    //Retorna uma cópia da lista de relatos feitos por este usuário.
-    public List<Relato> getRelatos() {
-        return new ArrayList<>(relatos); // para leitura externa
+    /**
+     * Cria e adiciona um novo relato à lista deste usuário, se ainda não existir um idêntico.
+     * Este metodo é uma SOBRECARGA de adicionarRelato(Relato relato).
+     *
+     * @param doenca A doença a ser relatada (não pode ser nula).
+     * @param local O local onde a doença foi contraída (não pode ser nulo).
+     * @param data A data do relato (não pode ser nula).
+     */
+    public void adicionarRelato(Doenca doenca, Local local, Date data) {
+        Objects.requireNonNull(doenca, "Doença não pode ser nula para adicionar relato.");
+        Objects.requireNonNull(local, "Local não pode ser nulo para adicionar relato.");
+        Objects.requireNonNull(data, "Data não pode ser nula para adicionar relato.");
+
+        // Cria o objeto Relato usando o metodo fábrica da classe Relato.
+        // Passa 'this' como o usuário atual.
+        Relato novoRelato = Relato.criar(this, doenca, local, data);
+
+        // Reutiliza a lógica do metodo original para adicionar e verificar duplicatas.
+        this.adicionarRelato(novoRelato);
+    }
+
+    public boolean removerRelato(Relato relato) {
+        Objects.requireNonNull(relato, "Relato a ser removido não pode ser nulo.");
+        boolean removido = this.relatos.remove(relato);
+        return this.relatos.remove(relato);
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Usuario that)) return false; // Pattern matching
+
+        // Se ambos os objetos têm IDs válidos (presumivelmente do banco), compare por ID.
+        if (this.id > 0 && that.id > 0) {
+            return this.id == that.id;
+        }
+        // Se um ou ambos não têm ID (são objetos novos em memória), compare por apelido.
+        // Isso assume que o apelido é único para objetos não persistidos (GerenciadorDeApelido).
+        return Objects.equals(this.apelido, that.apelido);
+    }
+
+    @Override
+    public int hashCode() {
+        // Consistente com equals: se tem ID, o hashcode é baseado nele.
+        if (this.id > 0) {
+            return Objects.hash(this.id);
+        }
+        // Senão, baseado no apelido.
+        return Objects.hash(this.apelido);
     }
 }
