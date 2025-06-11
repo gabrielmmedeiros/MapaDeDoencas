@@ -29,7 +29,7 @@ public class Sintoma implements IdentificavelPorNome {
             throw new IllegalArgumentException("ID inválido para reconstrução do Sintoma.");
         }
         Sintoma s = new Sintoma(nome);
-        s.id = id;
+        s.atribuirId(id);
         return s;
     }
 

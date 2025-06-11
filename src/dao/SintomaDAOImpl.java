@@ -1,6 +1,4 @@
 package dao;
-
-import dao.SintomaDAO;
 import model.Sintoma;
 import util.ConnectionFactory;
 

@@ -68,6 +68,9 @@ public abstract class Doenca implements IdentificavelPorNome {
             sintoma.adicionarDoencaInternamente(this); // Mantém a bidirecionalidade
         }
     }
+    public void adicionarSintoma(Sintoma sintoma) {
+        adicionarSintomaInternamente(sintoma);
+    }
 
     public Set<Sintoma> getSintomas() {
         return Collections.unmodifiableSet(sintomas);

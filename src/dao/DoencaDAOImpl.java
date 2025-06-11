@@ -43,11 +43,13 @@ public class DoencaDAOImpl implements DoencaDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     Doenca d = Doenca.reconstruir(
-                            rs.getInt("id"), rs.getString("nome"), rs.getString("gravidade")
+                            rs.getInt("id"),
+                            rs.getString("nome"),
+                            rs.getString("gravidade")
                     );
                     List<Sintoma> sintomas = sintomaDAO.buscarPorDoencaId(d.getId());
                     for (Sintoma s : sintomas) {
-                        d.adicionarSintoma(s);
+                        d.adicionarSintoma(s);  // <— chama o método público!
                     }
                     return d;
                 }
