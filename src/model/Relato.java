@@ -7,7 +7,7 @@ public class Relato {
     private final Doenca doenca;
     private final Local local;
 
-    public Relato(Usuario usuario, Doenca doenca, Local local) {
+    private Relato(Usuario usuario, Doenca doenca, Local local) {
         if (usuario == null || doenca == null || local == null) {
             throw new IllegalArgumentException("Nenhum campo pode ser nulo.");
         }
@@ -15,13 +15,20 @@ public class Relato {
         this.doenca = doenca;
         this.local = local;
     }
+    public static Relato criar(Usuario usuario, Doenca doenca, Local local) {
+        return new Relato(usuario, doenca, local);
+    }
+
 
     public int getId() {
         return id;
     }
-
-    public void setId(int id) {
-        this.id = id;
+    // reconstrução com ID (vindo do banco)
+    public static Relato reconstruir(int id, Usuario usuario, Doenca doenca, Local local) {
+        if (id <= 0) throw new IllegalArgumentException("ID inválido.");
+        Relato r = new Relato(usuario, doenca, local);
+        r.id = id;
+        return r;
     }
 
     public Usuario getUsuario() {
@@ -38,9 +45,9 @@ public class Relato {
 
     public String toString() {
         return "Relato{" +
-                "usuario=" + usuario.getApelido() +
-                doenca.getNome() +
-                ", local=" + local.getNome() +
+                "usuario='" + usuario.getApelido() + '\'' +
+                ", doenca='" + doenca.getNome() + '\'' +
+                ", local='" + local.getNome() + '\'' +
                 '}';
     }
 }

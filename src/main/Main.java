@@ -1,111 +1,106 @@
 package main;
+import dao.*;
 import model.*;
-import Interface.IdentificavelPorNome;
-import java.util.*;
+import java.util.Scanner;
 
 public class Main {
-
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        List<Relato> todosRelatos = new ArrayList<>();
 
-        // 1. Cria usuário
-        Usuario usuario = Usuario.criar();
-        System.out.println("Bem-vindo! Seu apelido é: " + usuario.getApelido());
+        // DAOs instanciados
+        UsuarioDAO usuarioDAO = new UsuarioDAOImpl();
+        DoencaDAO doencaDAO = new DoencaDAOImpl();
+        LocalDAO localDAO = new LocalDAOImpl();
+        RelatoDAO relatoDAO = new RelatoDAOImpl();
 
-        // 2. Lista de doenças e locais simulados
-        List<Doenca> doencas = List.of(
-                new DoencaLeve("Gripe"),
-                new DoencaModerada("Dengue"),
-                new DoencaGrave("COVID")
-        );
+        boolean executando = true;
 
-        List<Local> locais = List.of(
-                new Local("Centro"),
-                new Local("Zona Sul"),
-                new Local("Vila Nova")
-        );
 
-        while (true) {
-            System.out.println("\n--- MENU ---");
-            System.out.println("1. Fazer um novo relato");
-            System.out.println("2. Ver meus relatos");
-            System.out.println("3. Buscar relatos por local");
-            System.out.println("4. Buscar relatos por gravidade");
-            System.out.println("5. Ver todos os relatos agrupados");
+        while (executando) {
+            System.out.println("\n===== MENU =====");
+            System.out.println("1. Criar novo relato");
+            System.out.println("2. Listar todos os relatos");
+            System.out.println("3. Filtrar relatos por gravidade");
+            System.out.println("4. Filtrar relatos por local");
+            System.out.println("5. Ver resumo (+x) por doença e local");
             System.out.println("0. Sair");
-            System.out.print("Escolha uma opção: ");
-            int opcao = Integer.parseInt(scanner.nextLine());
+            System.out.print("Escolha: ");
+
+            int opcao = scanner.nextInt();
+            scanner.nextLine(); // consumir o enter
 
             switch (opcao) {
                 case 1 -> {
-                    // Escolher local
-                    System.out.println("\nEscolha um local:");
-                    for (int i = 0; i < locais.size(); i++) {
-                        System.out.println(i + 1 + " - " + locais.get(i).getNome());
+                    System.out.print("Digite seu apelido (deixe vazio para gerar aleatório): ");
+                    String apelido = scanner.nextLine();
+                    if (apelido.isBlank()) {
+                        apelido = "usuario_" + System.currentTimeMillis();
+                        System.out.println("Apelido gerado: " + apelido);
                     }
-                    int localIndex = Integer.parseInt(scanner.nextLine()) - 1;
-                    Local localEscolhido = locais.get(localIndex);
 
-                    // Escolher doença
-                    System.out.println("\nEscolha uma doença:");
-                    for (int i = 0; i < doencas.size(); i++) {
-                        System.out.println(i + 1 + " - " + doencas.get(i).getNome() + " [" + doencas.get(i).getGrauDeRisco() + "]");
+                    Usuario usuario = usuarioDAO.buscarPorApelido(apelido);
+                    if (usuario == null) {
+                        usuario = Usuario.criar(apelido);
+                        usuario = usuarioDAO.inserir(usuario);
                     }
-                    int doencaIndex = Integer.parseInt(scanner.nextLine()) - 1;
-                    Doenca doencaEscolhida = doencas.get(doencaIndex);
 
-                    // Criar relato
-                    Relato relato = new Relato(usuario, doencaEscolhida, localEscolhido);
-                    usuario.adicionarRelato(relato);
-                    todosRelatos.add(relato);
-                    System.out.println("✅ Relato adicionado com sucesso!");
-                }
+                    System.out.print("Digite o nome da doença: ");
+                    String nomeDoenca = scanner.nextLine();
 
-                case 2 -> {
-                    System.out.println("\n--- Seus relatos ---");
-                    if (usuario.getRelatos().isEmpty()) {
-                        System.out.println("Você ainda não fez nenhum relato.");
+                    System.out.print("Gravidade (LEVE, MODERADA, GRAVE): ");
+                    String gravidade = scanner.nextLine().toUpperCase();
+
+                    Doenca doenca;
+                    switch (gravidade) {
+                        case "LEVE" -> doenca = new DoencaLeve(nomeDoenca);
+                        case "MODERADA" -> doenca = new DoencaModerada(nomeDoenca);
+                        case "GRAVE" -> doenca = new DoencaGrave(nomeDoenca);
+                        default -> {
+                            System.out.println("Gravidade inválida.");
+                            break;
+                        }
+                    }
+
+                    Doenca doencaExistente = doencaDAO.buscarPorNome(nomeDoenca);
+                    if (doencaExistente == null) {
+                        doencaDAO.inserir(doenca);
+                        doenca = doencaDAO.buscarPorNome(nomeDoenca);
                     } else {
-                        usuario.getRelatos().forEach(System.out::println);
+                        doenca = doencaExistente;
                     }
-                }
 
-                case 3 -> {
-                    System.out.println("\nDigite o nome do local:");
+                    System.out.print("Digite o nome do local: ");
                     String nomeLocal = scanner.nextLine();
-                    System.out.println("\n--- Relatos em " + nomeLocal + " ---");
-                    todosRelatos.stream()
-                            .filter(r -> r.getLocal().getNome().equalsIgnoreCase(nomeLocal))
-                            .forEach(System.out::println);
-                }
 
-                case 4 -> {
-                    System.out.println("\nDigite a gravidade (Leve, Moderada, Grave):");
-                    String gravidade = scanner.nextLine();
-                    System.out.println("\n--- Relatos com gravidade " + gravidade + " ---");
-                    todosRelatos.stream()
-                            .filter(r -> r.getDoenca().getGrauDeRisco().equalsIgnoreCase(gravidade))
-                            .forEach(System.out::println);
-                }
-
-                case 5 -> {
-                    System.out.println("\n--- Relatos agrupados (Doença + Local) ---");
-                    Map<String, Integer> agrupados = new HashMap<>();
-                    for (Relato r : todosRelatos) {
-                        String chave = r.getDoenca().getNome() + " (" + r.getLocal().getNome() + ")";
-                        agrupados.put(chave, agrupados.getOrDefault(chave, 0) + 1);
+                    Local local = localDAO.buscarPorNome(nomeLocal);
+                    if (local == null) {
+                        local = Local.criar(nomeLocal);
+                        local = localDAO.inserir(local);
                     }
-                    agrupados.forEach((k, v) -> System.out.println(k + " +" + v));
+
+                    boolean jaRelatado = relatoDAO.existeRelatoDoUsuario(usuario, doenca, local);
+                    if (jaRelatado) {
+                        System.out.println("Você já relatou essa doença nesse local.");
+                    } else {
+                        Relato relato = Relato.criar(usuario, doenca, local);
+                        relatoDAO.inserir(relato);
+                        System.out.println("Relato registrado com sucesso!");
+                    }
                 }
 
+
+                case 2 -> System.out.println("Listar relatos (em breve)");
+                case 3 -> System.out.println("Filtrar por gravidade (em breve)");
+                case 4 -> System.out.println("Filtrar por local (em breve)");
+                case 5 -> System.out.println("Resumo por doença e local (em breve)");
                 case 0 -> {
-                    System.out.println("Até logo, " + usuario.getApelido() + "!");
-                    return;
+                    System.out.println("Encerrando...");
+                    executando = false;
                 }
-
-                default -> System.out.println("Opção inválida!");
+                default -> System.out.println("Opção inválida.");
             }
         }
+
+        scanner.close();
     }
 }

@@ -16,6 +16,14 @@ public class Local implements IdentificavelPorNome {
         }
         this.nome = nome.trim();
     }
+    //Para o DAO conseguir puxar o local criado para o banco
+    public static Local reconstruir(int id, String nome) {
+        if (id <= 0) throw new IllegalArgumentException("ID inválido.");
+        Local l = new Local(nome);
+        l.id = id; // acesso direto permitido dentro da própria classe
+        return l;
+    }
+
 
     public String getNome() {
         return nome;
@@ -25,13 +33,6 @@ public class Local implements IdentificavelPorNome {
         return id;
     }
 
-    // usado pelo DAO após inserir no banco e obter o ID gerado
-    public void setId(int id) {
-        if (id <= 0) {
-            throw new IllegalArgumentException("ID inválido.");
-        }
-        this.id = id;
-    }
 
 
     public String toString() {

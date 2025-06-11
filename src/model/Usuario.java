@@ -7,9 +7,9 @@ import java.util.Random;
  * - Gerar seu apelido de forma aleatória.
  * - Criar instâncias válidas de Usuario.
  * - Armazenar relatos realizados por este usuario
- * - Esta classe **não gerencia outros usuários**.
- * - Ela **não sabe se um apelido já foi usado**.
- * - Garantir a **unicidade do apelido** é responsabilidade da classe GerenciadorDeNick.
+ * - Esta classe **nao gerencia outros usuarios**.
+ * - Ela **nao sabe se um apelido já foi usado**.
+ * - Garantir a **unicidade do apelido** é responsabilidade da classe GerenciadorDeApelido.
  */
 
 public class Usuario {
@@ -30,19 +30,17 @@ public class Usuario {
     }
 
     //Define o ID do usuário. Usado apenas pelo DAO após inserir no banco.
-    public void setId(int id) {
-        if (id <= 0) {
-            throw new IllegalArgumentException("ID inválido");
-        }
-        this.id = id;
-    }
+
 
     /**
      * Construtor privado. Impede criação direta de objetos fora da própria classe.
      * A única forma de criar um Usuario é por meio do metodo estático criar().
      */
-    private Usuario(String apelido){
-        this.apelido=apelido;
+    private Usuario(String apelido) {
+        if (apelido == null || apelido.trim().isEmpty()) {
+            throw new IllegalArgumentException("Apelido inválido.");
+        }
+        this.apelido = apelido.trim();
     }
     //Gera um apelido aleatório
     private static String gerarApelidoAleatorio(){
@@ -65,6 +63,13 @@ public class Usuario {
     //Retorna o apelido deste usuário.
     public String getApelido() {
         return apelido;
+    }
+    //Para o DAO conseguir puxar o nome criado para o banco
+    public static Usuario reconstruir(int id, String apelido) {
+        if (id <= 0) throw new IllegalArgumentException("ID inválido.");
+        Usuario u = new Usuario(apelido);
+        u.id = id; // acesso direto, pois estamos dentro da própria classe
+        return u;
     }
     /**
      * Adiciona um novo relato à lista deste usuário.

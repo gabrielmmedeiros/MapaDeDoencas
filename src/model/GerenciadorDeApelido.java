@@ -7,7 +7,7 @@ import java.util.*;
  * - A chave é o apelido.
  * - O valor é o objeto Usuario.
  */
-public class GerenciadorDeNick {
+public class GerenciadorDeApelido {
 
     // Mapa de apelidos para objetos Usuario (garante unicidade e acesso rápido)
     private final Map<String, Usuario> usuariosPorApelido = new HashMap<>();

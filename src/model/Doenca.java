@@ -14,13 +14,26 @@ public abstract class Doenca implements IdentificavelPorNome {
     public int getId() {
         return id;
     }
-    // usado pelo DAO após inserir no banco e obter o ID gerado
-    public void setId(int id) {
+    // Metodo protegido usado pelas subclasses em reconstruções
+    protected void atribuirId(int id) {
         if (id <= 0) {
             throw new IllegalArgumentException("ID inválido.");
         }
         this.id = id;
     }
+
+    public static Doenca reconstruir(int id, String nome, String gravidade) {
+        Doenca d;
+        switch (gravidade.toUpperCase()) {
+            case "LEVE" -> d = new DoencaLeve(nome);
+            case "MODERADA" -> d = new DoencaModerada(nome);
+            case "GRAVE" -> d = new DoencaGrave(nome);
+            default -> throw new IllegalArgumentException("Gravidade inválida: " + gravidade);
+        }
+        d.atribuirId(id); // metodo private que seta o ID via reflection ou dentro da própria classe
+        return d;
+    }
+
 
 
     protected Doenca(String nome) {//protected (impede classes externas de criar doença diretamente), sem afetar as subclasses
