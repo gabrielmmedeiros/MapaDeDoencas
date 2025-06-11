@@ -1,7 +1,5 @@
 package model;
 
-import Interface.IdentificavelPorNome;
-
 /**
  * Representa uma doença informada por um usuário.
  * O grau de risco é definido pelas subclasses.
@@ -15,7 +13,7 @@ public abstract class Doenca implements IdentificavelPorNome {
         return id;
     }
     // Metodo protegido usado pelas subclasses em reconstruções
-    protected void atribuirId(int id) {
+    void atribuirId(int id) {
         if (id <= 0) {
             throw new IllegalArgumentException("ID inválido.");
         }

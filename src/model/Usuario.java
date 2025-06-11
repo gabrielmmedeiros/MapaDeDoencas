@@ -1,6 +1,7 @@
 package model;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Random;
 /**
  * Esta classe é responsável por:
@@ -64,11 +65,15 @@ public class Usuario {
     public String getApelido() {
         return apelido;
     }
+    void atribuirId(int id) {
+        if (this.id > 0) throw new IllegalStateException("Este objeto já possui um ID atribuído anteriormente");
+        if (id <= 0) throw new IllegalArgumentException("ID inválido");
+        this.id = id;
+    }
     //Para o DAO conseguir puxar o nome criado para o banco
     public static Usuario reconstruir(int id, String apelido) {
-        if (id <= 0) throw new IllegalArgumentException("ID inválido.");
         Usuario u = new Usuario(apelido);
-        u.id = id; // acesso direto, pois estamos dentro da própria classe
+        u.atribuirId(id);
         return u;
     }
     /**
@@ -77,6 +82,7 @@ public class Usuario {
      * Este metodo recebe um objeto `Relato`, que representa a doença relatada e o local onde foi contraída.
      */
     public void adicionarRelato(Relato relato) {
+        Objects.requireNonNull(relato, "Relato não pode ser nulo");
         relatos.add(relato);
     }
     //Retorna uma cópia da lista de relatos feitos por este usuário.

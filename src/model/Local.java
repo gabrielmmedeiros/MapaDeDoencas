@@ -1,7 +1,5 @@
 package model;
 
-import Interface.IdentificavelPorNome;
-
 /**
  * Representa uma localidade onde uma doença foi contraída.
  */

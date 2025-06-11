@@ -1,6 +1,8 @@
 package model;
 
 import java.util.*;
+import model.Usuario;
+import dao.UsuarioDAO;
 
 /**
  * Gerencia a criação de usuários com apelidos únicos, antes de persistir o dado.
@@ -8,7 +10,7 @@ import java.util.*;
  * - O valor é o objeto Usuario.
  */
 public class GerenciadorDeApelido {
-
+    private static final int MAX_TENTATIVAS = 1600;
     // Mapa de apelidos para objetos Usuario (garante unicidade e acesso rápido)
     private final Map<String, Usuario> usuariosPorApelido = new HashMap<>();
 
@@ -18,8 +20,12 @@ public class GerenciadorDeApelido {
      * Retorna novo Usuario criado com apelido exclusivo
      */
     public Usuario criarUsuarioUnico() {
+        int tentativas = 0;
         Usuario novo;
         do {
+            if(++tentativas>MAX_TENTATIVAS){
+                throw new IllegalStateException("Não foi possível gerar um apelido único em " + MAX_TENTATIVAS + " tentativas");
+            }
             novo = Usuario.criar();
         } while (usuariosPorApelido.containsKey(novo.getApelido()));
 
