@@ -7,97 +7,107 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Implementação JDBC de UsuarioDAO.
+ */
 public class UsuarioDAOImpl implements UsuarioDAO {
-
-    private final Connection conn;
-
-    public UsuarioDAOImpl() {
-        this.conn = ConnectionFactory.getConnection();
-    }
-
-
-    public Usuario inserir(Usuario usuario) {
-        String sql = "INSERT INTO Usuario (apelido) VALUES (?)";
-        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    @Override
+    public void criar(Usuario usuario) {
+        String sql = "INSERT INTO usuarios (apelido) VALUES (?)";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, usuario.getApelido());
-            stmt.executeUpdate();
-
-            ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                int idGerado = rs.getInt(1);
-                return Usuario.reconstruir(idGerado, usuario.getApelido());
-            } else {
-                throw new SQLException("Falha ao obter ID gerado.");
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RuntimeException("Falha ao inserir usuário, nenhuma linha afetada.");
+            }
+            try (ResultSet keys = stmt.getGeneratedKeys()) {
+                if (keys.next()) {
+                    usuario.atribuirId(keys.getInt(1));
+                } else {
+                    throw new RuntimeException("Falha ao obter ID do usuário inserido.");
+                }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao inserir usuário: " + e.getMessage(), e);
+            throw new RuntimeException("Erro ao inserir usuário no banco de dados.", e);
         }
     }
 
+    @Override
     public Usuario buscarPorId(int id) {
-        String sql = "SELECT * FROM Usuario WHERE id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        String sql = "SELECT id, apelido FROM usuarios WHERE id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido"));
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido"));
+                }
+                return null;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao buscar usuário por ID: " + e.getMessage(), e);
+            throw new RuntimeException("Erro ao buscar usuário por ID.", e);
         }
-        return null;
     }
 
+    @Override
     public Usuario buscarPorApelido(String apelido) {
-        String sql = "SELECT * FROM Usuario WHERE apelido = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        String sql = "SELECT id, apelido FROM usuarios WHERE apelido = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, apelido);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido"));
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido"));
+                }
+                return null;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao buscar usuário por apelido: " + e.getMessage(), e);
+            throw new RuntimeException("Erro ao buscar usuário por apelido.", e);
         }
-        return null;
     }
 
+    @Override
     public List<Usuario> listarTodos() {
-        List<Usuario> usuarios = new ArrayList<>();
-        String sql = "SELECT * FROM Usuario";
-
-        try (PreparedStatement stmt = conn.prepareStatement(sql);
+        String sql = "SELECT id, apelido FROM usuarios";
+        List<Usuario> lista = new ArrayList<>();
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
             while (rs.next()) {
-                usuarios.add(Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido")));
+                lista.add(Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido")));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao listar usuários: " + e.getMessage(), e);
+            throw new RuntimeException("Erro ao listar usuários.", e);
         }
-        return usuarios;
+        return lista;
     }
 
+    @Override
     public void atualizar(Usuario usuario) {
-        String sql = "UPDATE Usuario SET apelido = ? WHERE id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        String sql = "UPDATE usuarios SET apelido = ? WHERE id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, usuario.getApelido());
             stmt.setInt(2, usuario.getId());
-            stmt.executeUpdate();
+            int rows = stmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("Nenhum usuário foi atualizado.");
+            }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao atualizar usuário: " + e.getMessage(), e);
+            throw new RuntimeException("Erro ao atualizar usuário.", e);
         }
     }
 
-    public void deletar(int id) {
-        String sql = "DELETE FROM Usuario WHERE id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+    @Override
+    public boolean deletar(int id) {
+        String sql = "DELETE FROM usuarios WHERE id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
-            stmt.executeUpdate();
+            return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao deletar usuário: " + e.getMessage(), e);
+            throw new RuntimeException("Erro ao deletar usuário.", e);
         }
     }
 }

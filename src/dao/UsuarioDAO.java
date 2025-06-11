@@ -1,14 +1,20 @@
 package dao;
 
 import model.Usuario;
+import util.ConnectionFactory;
+
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Interface DAO para operações CRUD de Usuario.
+ */
 public interface UsuarioDAO {
-    Usuario inserir(Usuario usuario);
+    void criar(Usuario usuario);
     Usuario buscarPorId(int id);
     Usuario buscarPorApelido(String apelido);
     List<Usuario> listarTodos();
     void atualizar(Usuario usuario);
-    void deletar(int id);
+    boolean deletar(int id);
 }
-

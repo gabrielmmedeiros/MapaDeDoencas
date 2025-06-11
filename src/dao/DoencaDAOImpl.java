@@ -1,91 +1,135 @@
 package dao;
 
-import model.*;
+import model.Usuario;
 import util.ConnectionFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DoencaDAOImpl implements DoencaDAO {
-    private final Connection conn;
+/**
+ * Interface DAO para operações CRUD de Usuario.
+ */
+public interface UsuarioDAO {
+    void criar(Usuario usuario);
+    Usuario buscarPorId(int id);
+    Usuario buscarPorApelido(String apelido);
+    List<Usuario> listarTodos();
+    void atualizar(Usuario usuario);
+    boolean deletar(int id);
+}
 
-    public DoencaDAOImpl(Connection conn) {
-        this.conn = conn;
-    }
 
+package dao;
 
-    public void inserir(Doenca doenca) throws SQLException {
-        String sql = "INSERT INTO doenca (nome, gravidade) VALUES (?, ?)";
-        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setString(1, doenca.getNome());
-            stmt.setString(2, doenca.getGrauDeRisco().toUpperCase()); // LEVE, MODERADA, GRAVE
-            stmt.executeUpdate();
+import model.Usuario;
+import util.ConnectionFactory;
 
-            ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                Doenca.reconstruir(rs.getInt(1), doenca.getNome(), doenca.getGrauDeRisco()); // opcional, útil se você quiser reconstruir depois
+import java.sql.*;
+        import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Implementação JDBC de UsuarioDAO.
+ */
+public class UsuarioDAOImpl implements UsuarioDAO {
+    @Override
+    public void criar(Usuario usuario) {
+        String sql = "INSERT INTO usuarios (apelido) VALUES (?)";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, usuario.getApelido());
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RuntimeException("Falha ao inserir usuário, nenhuma linha afetada.");
             }
+            try (ResultSet keys = stmt.getGeneratedKeys()) {
+                if (keys.next()) {
+                    usuario.atribuirId(keys.getInt(1));
+                } else {
+                    throw new RuntimeException("Falha ao obter ID do usuário inserido.");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao inserir usuário no banco de dados.", e);
         }
     }
 
-    public Doenca buscarPorId(int id) throws SQLException {
-        String sql = "SELECT * FROM doenca WHERE id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+    @Override
+    public Usuario buscarPorId(int id) {
+        String sql = "SELECT id, apelido FROM usuarios WHERE id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return Doenca.reconstruir(
-                        rs.getInt("id"),
-                        rs.getString("nome"),
-                        rs.getString("gravidade")
-                );
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido"));
+                }
+                return null;
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao buscar usuário por ID.", e);
         }
-        return null;
     }
 
-
-    public Doenca buscarPorNome(String nome) throws SQLException {
-        String sql = "SELECT * FROM doenca WHERE nome = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, nome);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return Doenca.reconstruir(
-                        rs.getInt("id"),
-                        rs.getString("nome"),
-                        rs.getString("gravidade")
-                );
+    @Override
+    public Usuario buscarPorApelido(String apelido) {
+        String sql = "SELECT id, apelido FROM usuarios WHERE apelido = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, apelido);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido"));
+                }
+                return null;
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao buscar usuário por apelido.", e);
         }
-        return null;
     }
 
-
-    public List<Doenca> listarTodas() throws SQLException {
-        List<Doenca> doencas = new ArrayList<>();
-        String sql = "SELECT * FROM doenca";
-        try (PreparedStatement stmt = conn.prepareStatement(sql);
+    @Override
+    public List<Usuario> listarTodos() {
+        String sql = "SELECT id, apelido FROM usuarios";
+        List<Usuario> lista = new ArrayList<>();
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
             while (rs.next()) {
-                Doenca d = Doenca.reconstruir(
-                        rs.getInt("id"),
-                        rs.getString("nome"),
-                        rs.getString("gravidade")
-                );
-                doencas.add(d);
+                lista.add(Usuario.reconstruir(rs.getInt("id"), rs.getString("apelido")));
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao listar usuários.", e);
         }
-        return doencas;
+        return lista;
     }
 
-    public void deletar(int id) throws SQLException {
-        String sql = "DELETE FROM doenca WHERE id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+    @Override
+    public void atualizar(Usuario usuario) {
+        String sql = "UPDATE usuarios SET apelido = ? WHERE id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, usuario.getApelido());
+            stmt.setInt(2, usuario.getId());
+            int rows = stmt.executeUpdate();
+            if (rows == 0) {
+                throw new RuntimeException("Nenhum usuário foi atualizado.");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao atualizar usuário.", e);
+        }
+    }
+
+    @Override
+    public boolean deletar(int id) {
+        String sql = "DELETE FROM usuarios WHERE id = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
-            stmt.executeUpdate();
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao deletar usuário.", e);
         }
     }
 }

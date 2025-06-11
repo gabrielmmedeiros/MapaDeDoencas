@@ -1,9 +1,6 @@
 package model;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Random;
-import java.util.Date;
+import java.util.*;
+
 /**
  * Esta classe é responsável por:
  * - Gerar seu apelido de forma aleatória.
@@ -144,5 +141,8 @@ public class Usuario {
         }
         // Senão, baseado no apelido.
         return Objects.hash(this.apelido);
+    }
+    public List<Relato> getRelatos() {
+        return Collections.unmodifiableList(this.relatos);
     }
 }
