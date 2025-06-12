@@ -1,18 +1,24 @@
 package dao;
 
 import model.Local;
+import util.ConnectionFactory;
 
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
+
 public interface LocalDAO {
-    void inserir(Local local) throws SQLException;
 
-    Local buscarPorId(int id) throws SQLException;
+    Local criar(Local local);
 
-    Local buscarPorNome(String nome) throws SQLException;
+    Local buscarPorId(int id);
 
-    List<Local> listarTodos() throws SQLException;
+    Local buscarPorNome(String nome);
 
-    void deletar(int id) throws SQLException;
+    List<Local> listarTodos();
+
+    void atualizar(Local local);
+
+    boolean deletar(int id);
 }

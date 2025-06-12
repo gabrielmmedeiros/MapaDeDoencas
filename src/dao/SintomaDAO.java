@@ -1,10 +1,6 @@
 package dao;
 
 import model.Sintoma;
-import util.ConnectionFactory;
-
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
