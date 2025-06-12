@@ -93,14 +93,7 @@ public class Usuario {
             this.relatos.add(relato);        // Adiciona SOMENTE SE não estiver na lista
         }
     }
-    /**
-     * Cria e adiciona um novo relato à lista deste usuário, se ainda não existir um idêntico.
-     * Este metodo é uma SOBRECARGA de adicionarRelato(Relato relato).
-     *
-     * @param doenca A doença a ser relatada (não pode ser nula).
-     * @param local O local onde a doença foi contraída (não pode ser nulo).
-     * @param data A data do relato (não pode ser nula).
-     */
+
     public void adicionarRelato(Doenca doenca, Local local, Date data) {
         Objects.requireNonNull(doenca, "Doença não pode ser nula para adicionar relato.");
         Objects.requireNonNull(local, "Local não pode ser nulo para adicionar relato.");

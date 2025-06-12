@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Implementação JDBC de DoencaDAO.
- * Carregamento de sintomas delegados ao SintomaDAO.
+ * Carregamento de sintomas pertence ao SintomaDAO.
  */
 public class DoencaDAOImpl implements DoencaDAO {
     private final SintomaDAO sintomaDAO = new SintomaDAOImpl();

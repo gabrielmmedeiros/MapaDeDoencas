@@ -66,8 +66,6 @@ public class Relato {
         return local;
     }
 
-    // equals e hashCode são CRUCIAIS para que Usuario.adicionarRelato (com verificação de duplicatas)
-    // e Usuario.removerRelato funcionem corretamente.
     // Um relato é considerado igual a outro se tiver o mesmo usuário, doença e local.
     @Override
     public boolean equals(Object o) {
