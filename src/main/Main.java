@@ -27,6 +27,13 @@ public class Main {
         Usuario usuario = usuarioDAO.criar(usuarioTemp);
         final int usuarioId = usuario.getId();
         System.out.println("Bem-vindo! Seu apelido é: " + usuario.getApelido());
+        System.out.println("Relatos já cadastrados no sistema:");
+        List<Relato> todos = relatoDAO.listarTodos();
+        if (todos.isEmpty()) {
+            System.out.println("  (ainda não há relatos)");
+        } else {
+            todos.forEach(r -> System.out.println(formatRelato(r)));
+        }
 
         boolean executando = true;
         while (executando) {
